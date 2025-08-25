@@ -26,6 +26,7 @@ export default function BudgetTab() {
   const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<number>(0)
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data: budgets, isLoading, error, refetch } = useQuery<BudgetData[]>({
@@ -101,8 +102,9 @@ export default function BudgetTab() {
     }
   }
 
-  const openTransactionModal = (budgetId: string) => {
+  const openTransactionModal = (budgetId: string, category?: string) => {
     setSelectedBudgetId(budgetId)
+    setSelectedCategory(category || null)
     setShowTransactionModal(true)
   }
 
@@ -214,9 +216,14 @@ export default function BudgetTab() {
                                 </button>
                               </div>
                             ) : (
-                              <button onClick={() => startEditing(line)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">
-                                Edit Budget
-                              </button>
+                              <div className="flex gap-2">
+                                <button onClick={() => startEditing(line)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">
+                                  Edit Budget
+                                </button>
+                                <button onClick={() => openTransactionModal(budget.id, line.category)} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium">
+                                  Add Transaction
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -224,12 +231,6 @@ export default function BudgetTab() {
                     })}
                   </tbody>
                 </table>
-                <button
-                  onClick={() => openTransactionModal(budget.id)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  Add Transaction
-                </button>
               </div>
             </details>
           )
@@ -248,6 +249,7 @@ export default function BudgetTab() {
             budgetLines={selectedBudget.budgetLines}
             onTransactionAdded={handleTransactionAdded}
             budgetId={selectedBudget.id}
+            preselectedCategory={selectedCategory || undefined}
           />
         </Modal>
       )}
