@@ -176,7 +176,7 @@ export default function BudgetTab() {
   const selectedBudget = budgets.find(b => b.id === selectedBudgetId)
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 bg-transparent">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Your Budgets</h1>
         <button

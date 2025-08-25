@@ -42,7 +42,37 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('theme') || 'system';
+                let effectiveTheme = theme;
+                
+                if (theme === 'system') {
+                  effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                
+                document.documentElement.classList.remove('light', 'dark');
+                document.documentElement.classList.add(effectiveTheme);
+                
+                if (effectiveTheme === 'dark') {
+                  document.documentElement.style.setProperty('--background', '#0a0a0a');
+                  document.documentElement.style.setProperty('--foreground', '#ededed');
+                } else {
+                  document.documentElement.style.setProperty('--background', '#ffffff');
+                  document.documentElement.style.setProperty('--foreground', '#171717');
+                }
+              } catch (e) {
+                // Fallback to light theme
+                document.documentElement.classList.add('light');
+              }
+            `
+          }}
+        />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
         <ThemeProvider>
           <QueryProvider>
             {children}

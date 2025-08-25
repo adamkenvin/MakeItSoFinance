@@ -15,16 +15,20 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('system')
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light')
+  const [mounted, setMounted] = useState(false)
 
+  // Prevent hydration mismatch
   useEffect(() => {
+    setMounted(true)
+    
     // Load theme from localStorage on mount
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
-    }
+    const savedTheme = (localStorage.getItem('theme') as Theme) || 'system'
+    setTheme(savedTheme)
   }, [])
 
   useEffect(() => {
+    if (!mounted) return
+    
     // Save theme to localStorage whenever it changes
     localStorage.setItem('theme', theme)
     
@@ -52,36 +56,36 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--background', '#ffffff')
       root.style.setProperty('--foreground', '#171717')
     }
-  }, [theme])
+  }, [theme, mounted])
 
   useEffect(() => {
     // Listen for system theme changes when theme is set to 'system'
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    if (!mounted || theme !== 'system') return
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      const newEffectiveTheme = e.matches ? 'dark' : 'light'
+      setEffectiveTheme(newEffectiveTheme)
       
-      const handleChange = (e: MediaQueryListEvent) => {
-        const newEffectiveTheme = e.matches ? 'dark' : 'light'
-        setEffectiveTheme(newEffectiveTheme)
-        
-        // Apply theme to document
-        const root = document.documentElement
-        root.classList.remove('light', 'dark')
-        root.classList.add(newEffectiveTheme)
-        
-        // Update CSS custom properties
-        if (newEffectiveTheme === 'dark') {
-          root.style.setProperty('--background', '#0a0a0a')
-          root.style.setProperty('--foreground', '#ededed')
-        } else {
-          root.style.setProperty('--background', '#ffffff')
-          root.style.setProperty('--foreground', '#171717')
-        }
+      // Apply theme to document
+      const root = document.documentElement
+      root.classList.remove('light', 'dark')
+      root.classList.add(newEffectiveTheme)
+      
+      // Update CSS custom properties
+      if (newEffectiveTheme === 'dark') {
+        root.style.setProperty('--background', '#0a0a0a')
+        root.style.setProperty('--foreground', '#ededed')
+      } else {
+        root.style.setProperty('--background', '#ffffff')
+        root.style.setProperty('--foreground', '#171717')
       }
-      
-      mediaQuery.addEventListener('change', handleChange)
-      return () => mediaQuery.removeEventListener('change', handleChange)
     }
-  }, [theme])
+    
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [theme, mounted])
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, effectiveTheme }}>
