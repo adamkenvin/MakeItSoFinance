@@ -3,6 +3,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import TransactionForm from './TransactionForm'
+import Modal from './Modal'
 
 interface BudgetLine {
   id: string
@@ -25,7 +26,7 @@ interface BudgetData {
 }
 
 export default function BudgetPage() {
-  const [showTransactionForm, setShowTransactionForm] = useState(false)
+  const [showTransactionModal, setShowTransactionModal] = useState(false)
   const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<number>(0)
 
@@ -62,7 +63,7 @@ export default function BudgetPage() {
 
   const handleTransactionAdded = () => {
     refetch() // Refresh budget data when new transaction is added
-    setShowTransactionForm(false)
+    setShowTransactionModal(false)
   }
 
   const startEditing = (budgetLine: BudgetLine) => {
@@ -139,7 +140,7 @@ export default function BudgetPage() {
             {data.budgetLines.map((line) => {
               const percentSpent = (line.actualSpent / line.budgetedAmount) * 100
               const isOverBudget = line.remaining < 0
-              
+
               return (
                 <tr key={line.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -220,10 +221,10 @@ export default function BudgetPage() {
 
       <div className="flex gap-4 mb-6">
         <button
-          onClick={() => setShowTransactionForm(!showTransactionForm)}
+          onClick={() => setShowTransactionModal(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          {showTransactionForm ? 'Cancel' : 'Add Transaction'}
+          Add Transaction
         </button>
         <button
           onClick={() => refetch()}
@@ -233,12 +234,18 @@ export default function BudgetPage() {
         </button>
       </div>
 
-      {showTransactionForm && (
+      {/* Transaction Modal */}
+      <Modal
+        isOpen={showTransactionModal}
+        onClose={() => setShowTransactionModal(false)}
+        title="Add New Transaction"
+        maxWidth="3xl"
+      >
         <TransactionForm 
           budgetLines={data.budgetLines}
           onTransactionAdded={handleTransactionAdded}
         />
-      )}
+      </Modal>
     </div>
   )
 }
