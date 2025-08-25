@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { description, amount, category, date } = body
+    const { description, amount, category, date, budgetId } = body
 
     // Get the current user (for MVP, just use the first user)
     const user = await prisma.user.findFirst()
@@ -12,18 +12,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No user found' }, { status: 400 })
     }
 
-    // Get the current budget
-    const currentDate = new Date()
-    const currentMonth = currentDate.getMonth() + 1
-    const currentYear = currentDate.getFullYear()
-
     const budget = await prisma.budget.findUnique({
       where: {
-        userId_month_year: {
-          userId: user.id,
-          month: currentMonth,
-          year: currentYear
-        }
+        id: budgetId
       },
       include: {
         budgetLines: true

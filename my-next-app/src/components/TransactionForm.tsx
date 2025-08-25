@@ -13,9 +13,10 @@ interface BudgetLine {
 interface TransactionFormProps {
   budgetLines: BudgetLine[]
   onTransactionAdded: () => void
+  budgetId: string
 }
 
-export default function TransactionForm({ budgetLines, onTransactionAdded }: TransactionFormProps) {
+export default function TransactionForm({ budgetLines, onTransactionAdded, budgetId }: TransactionFormProps) {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -36,7 +37,7 @@ export default function TransactionForm({ budgetLines, onTransactionAdded }: Tra
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, budgetId }),
       })
 
       if (!response.ok) {
