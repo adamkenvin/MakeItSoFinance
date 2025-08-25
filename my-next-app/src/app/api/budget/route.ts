@@ -93,3 +93,38 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch budget' }, { status: 500 })
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const { budgetLineId, budgetedAmount } = await request.json()
+    
+    // Validate input
+    if (!budgetLineId || typeof budgetedAmount !== 'number' || budgetedAmount < 0) {
+      return NextResponse.json({ error: 'Invalid budget line ID or amount' }, { status: 400 })
+    }
+
+    // Update the budget line amount
+    const updatedBudgetLine = await prisma.budgetLine.update({
+      where: { id: budgetLineId },
+      data: { budgetedAmount },
+      include: {
+        transactions: true
+      }
+    })
+
+    // Calculate updated metrics
+    const actualSpent = updatedBudgetLine.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
+    const remaining = updatedBudgetLine.budgetedAmount - actualSpent
+    
+    return NextResponse.json({
+      id: updatedBudgetLine.id,
+      category: updatedBudgetLine.category,
+      budgetedAmount: updatedBudgetLine.budgetedAmount,
+      actualSpent,
+      remaining
+    })
+  } catch (error) {
+    console.error('Error updating budget line:', error)
+    return NextResponse.json({ error: 'Failed to update budget line' }, { status: 500 })
+  }
+}
