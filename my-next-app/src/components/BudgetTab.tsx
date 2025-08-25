@@ -5,6 +5,7 @@ import { useState } from 'react'
 import TransactionForm from './TransactionForm'
 import Modal from './Modal'
 import CategoryForm from './CategoryForm'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface BudgetLine {
   id: string
@@ -23,6 +24,7 @@ interface BudgetData {
 }
 
 export default function BudgetTab() {
+  const { effectiveTheme } = useTheme()
   const [showTransactionModal, setShowTransactionModal] = useState(false)
   const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<number>(0)
@@ -169,16 +171,16 @@ export default function BudgetTab() {
     setShowTransactionModal(true)
   }
 
-  if (isLoading) return <div className="p-8 text-gray-900">Loading budgets...</div>
-  if (error) return <div className="p-8 text-red-500">Error loading budgets: {String(error)}</div>
-  if (!budgets || budgets.length === 0) return <div className="p-8">No budget data found</div>
+  if (isLoading) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>Loading budgets...</div>
+  if (error) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-red-400' : 'text-red-500'}`}>Error loading budgets: {String(error)}</div>
+  if (!budgets || budgets.length === 0) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>No budget data found</div>
 
   const selectedBudget = budgets.find(b => b.id === selectedBudgetId)
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 bg-transparent">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Your Budgets</h1>
+        <h1 className={`text-3xl font-bold ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>Your Budgets</h1>
         <button
           onClick={() => createBudgetMutation.mutate()}
           disabled={createBudgetMutation.isPending}
@@ -195,11 +197,11 @@ export default function BudgetTab() {
           const totalRemaining = totalBudgeted - totalSpent
 
           return (
-            <details key={budget.id} className="bg-white shadow-lg rounded-lg overflow-hidden" open={index === 0}>
-              <summary className="p-6 cursor-pointer hover:bg-gray-50">
+            <details key={budget.id} className={`${effectiveTheme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-lg rounded-lg overflow-hidden`} open={index === 0}>
+              <summary className={`p-6 cursor-pointer ${effectiveTheme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className={`text-2xl font-bold ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
                       {budget.name}
                     </h2>
                     <button
@@ -228,38 +230,38 @@ export default function BudgetTab() {
                   </div>
                 </div>
               </summary>
-              <div className="p-6 border-t border-gray-200">
+              <div className={`p-6 border-t ${effectiveTheme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
                 {addingCategoryId === budget.id && (
                   <div className="mb-6">
                     <CategoryForm budgetId={budget.id} onCategoryAdded={handleCategoryAdded} />
                   </div>
                 )}
                 <table className="w-full mb-6">
-                  <thead className="bg-gray-50">
+                  <thead className={`${effectiveTheme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budgeted</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spent</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${effectiveTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Category</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${effectiveTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Budgeted</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${effectiveTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Spent</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${effectiveTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Remaining</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${effectiveTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Progress</th>
+                      <th className={`px-6 py-3 text-left text-xs font-medium ${effectiveTheme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className={`${effectiveTheme === 'dark' ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
                     {budget.budgetLines.map((line) => {
                       const percentSpent = (line.actualSpent / line.budgetedAmount) * 100
                       const isOverBudget = line.remaining < 0
 
                       return (
-                        <tr key={line.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <tr key={line.id} className={`${effectiveTheme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
                             {editingCategoryId === line.id ? (
                               <input
                                 type="text"
                                 value={editCategoryName}
                                 onChange={(e) => setEditCategoryName(e.target.value)}
                                 onKeyDown={handleCategoryKeyDown}
-                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className={`w-full px-2 py-1 border ${effectiveTheme === 'dark' ? 'border-gray-600 bg-gray-700 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
                                 placeholder="Category name (Enter to save, Esc to cancel)"
                                 autoFocus
                               />
@@ -272,15 +274,15 @@ export default function BudgetTab() {
                               </button>
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                             {editingBudgetLineId === line.id ? (
                               <div className="flex items-center gap-2">
-                                <span className="text-gray-400">$</span>
+                                <span className={`${effectiveTheme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>$</span>
                                 <input
                                   type="number"
                                   value={editAmount}
                                   onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)}
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  className={`w-20 px-2 py-1 border ${effectiveTheme === 'dark' ? 'border-gray-600 bg-gray-700 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
                                   min="0"
                                   step="0.01"
                                 />
@@ -289,19 +291,19 @@ export default function BudgetTab() {
                               `$${line.budgetedAmount.toFixed(2)}`
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${line.actualSpent.toFixed(2)}</td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>${line.actualSpent.toFixed(2)}</td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
                             ${line.remaining.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div className={`w-16 ${effectiveTheme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'} rounded-full h-2`}>
                                 <div 
                                   className={`h-2 rounded-full ${isOverBudget ? 'bg-red-500' : percentSpent > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
                                   style={{ width: `${Math.min(percentSpent, 100)}%` }}
                                 />
                               </div>
-                              <span className="ml-2 text-sm text-gray-500">{percentSpent.toFixed(0)}%</span>
+                              <span className={`ml-2 text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{percentSpent.toFixed(0)}%</span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">

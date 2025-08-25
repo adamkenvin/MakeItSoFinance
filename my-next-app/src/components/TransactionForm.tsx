@@ -69,7 +69,7 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
   return (
     <div>
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-500 text-red-700 dark:text-red-400 rounded">
           {error}
         </div>
       )}
@@ -79,7 +79,7 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
         <div className="flex-1">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-4">
-              <label htmlFor="description" className="text-sm font-medium text-gray-700 w-24 flex-shrink-0">
+              <label htmlFor="description" className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 flex-shrink-0">
                 Description
               </label>
               <input
@@ -89,13 +89,13 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
                 value={formData.description}
                 onChange={handleChange}
                 required
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="e.g., Grocery shopping at Safeway"
               />
             </div>
 
             <div className="flex items-center gap-4">
-              <label htmlFor="amount" className="text-sm font-medium text-gray-700 w-24 flex-shrink-0">
+              <label htmlFor="amount" className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 flex-shrink-0">
                 Amount ($)
               </label>
               <input
@@ -107,13 +107,13 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
                 required
                 min="0"
                 step="0.01"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0.00"
               />
             </div>
 
             <div className="flex items-center gap-4">
-              <label htmlFor="category" className="text-sm font-medium text-gray-700 w-24 flex-shrink-0">
+              <label htmlFor="category" className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 flex-shrink-0">
                 Category
               </label>
               <select
@@ -122,7 +122,7 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
                 value={formData.category}
                 onChange={handleChange}
                 required
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select a category</option>
                 {budgetLines.map((line) => (
@@ -134,7 +134,7 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
             </div>
 
             <div className="flex items-center gap-4">
-              <label htmlFor="date" className="text-sm font-medium text-gray-700 w-24 flex-shrink-0">
+              <label htmlFor="date" className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 flex-shrink-0">
                 Date
               </label>
               <input
@@ -144,7 +144,7 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
                 value={formData.date}
                 onChange={handleChange}
                 required
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -163,12 +163,12 @@ export default function TransactionForm({ budgetLines, onTransactionAdded, budge
         {/* Budget Summary Section */}
         {budgetLines.length > 0 && (
           <div className="w-64 flex-shrink-0">
-            <div className="p-4 bg-gray-50 rounded-lg h-fit">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Quick Budget Summary</h3>
+            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg h-fit">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Quick Budget Summary</h3>
               <div className="space-y-2 text-xs">
                 {budgetLines.map((line) => (
                   <div key={line.id} className="flex justify-between">
-                    <span className="text-gray-900">{line.category}:</span>
+                    <span className="text-gray-900 dark:text-gray-100">{line.category}:</span>
                     <span className={line.remaining < 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
                       ${line.remaining.toFixed(2)}
                     </span>
