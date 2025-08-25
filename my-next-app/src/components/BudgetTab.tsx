@@ -7,6 +7,15 @@ import Modal from './Modal'
 import CategoryForm from './CategoryForm'
 import { useTheme } from '../contexts/ThemeContext'
 
+interface Transaction {
+  id: string
+  description: string
+  amount: number
+  category: string
+  date: string
+  budgetLineId: string
+}
+
 interface BudgetLine {
   id: string
   category: string
@@ -33,6 +42,8 @@ export default function BudgetTab() {
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
   const [addingCategoryId, setAddingCategoryId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [categoryTransactions, setCategoryTransactions] = useState<Record<string, Transaction[]>>({})
   const queryClient = useQueryClient()
 
   const { data: budgets, isLoading, error, refetch } = useQuery<BudgetData[]>({
@@ -165,10 +176,48 @@ export default function BudgetTab() {
     }
   }
 
+  const handleBudgetAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      saveEdit()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelEditing()
+    }
+  }
+
   const openTransactionModal = (budgetId: string, category?: string) => {
     setSelectedBudgetId(budgetId)
     setSelectedCategory(category || null)
     setShowTransactionModal(true)
+  }
+
+  const toggleCategoryExpansion = async (budgetLineId: string) => {
+    const newExpanded = new Set(expandedCategories)
+    
+    if (expandedCategories.has(budgetLineId)) {
+      newExpanded.delete(budgetLineId)
+    } else {
+      newExpanded.add(budgetLineId)
+      
+      // Fetch transactions if not already loaded
+      if (!categoryTransactions[budgetLineId]) {
+        try {
+          const response = await fetch(`/api/budget/transactions?budgetLineId=${budgetLineId}`)
+          if (response.ok) {
+            const transactions = await response.json()
+            setCategoryTransactions(prev => ({
+              ...prev,
+              [budgetLineId]: transactions
+            }))
+          }
+        } catch (error) {
+          console.error('Error fetching transactions:', error)
+        }
+      }
+    }
+    
+    setExpandedCategories(newExpanded)
   }
 
   if (isLoading) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>Loading budgets...</div>
@@ -253,83 +302,131 @@ export default function BudgetTab() {
                       const isOverBudget = line.remaining < 0
 
                       return (
-                        <tr key={line.id} className={`${effectiveTheme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
-                            {editingCategoryId === line.id ? (
-                              <input
-                                type="text"
-                                value={editCategoryName}
-                                onChange={(e) => setEditCategoryName(e.target.value)}
-                                onKeyDown={handleCategoryKeyDown}
-                                className={`w-full px-2 py-1 border ${effectiveTheme === 'dark' ? 'border-gray-600 bg-gray-700 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                placeholder="Category name (Enter to save, Esc to cancel)"
-                                autoFocus
-                              />
-                            ) : (
-                              <button
-                                onClick={() => startEditingCategory(line)}
-                                className="text-left hover:text-blue-600 hover:underline focus:outline-none focus:text-blue-600 focus:underline"
-                              >
-                                {line.category}
-                              </button>
-                            )}
-                          </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                            {editingBudgetLineId === line.id ? (
-                              <div className="flex items-center gap-2">
-                                <span className={`${effectiveTheme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>$</span>
-                                <input
-                                  type="number"
-                                  value={editAmount}
-                                  onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)}
-                                  className={`w-20 px-2 py-1 border ${effectiveTheme === 'dark' ? 'border-gray-600 bg-gray-700 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                  min="0"
-                                  step="0.01"
-                                />
+                        <>
+                          <tr key={line.id} className={`${effectiveTheme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
+                              <div className="flex items-center">
+                                <button
+                                  onClick={() => toggleCategoryExpansion(line.id)}
+                                  className={`mr-2 p-1 rounded hover:bg-gray-200 ${effectiveTheme === 'dark' ? 'hover:bg-gray-600' : 'hover:bg-gray-200'} transition-colors`}
+                                  title={expandedCategories.has(line.id) ? 'Hide transactions' : 'Show transactions'}
+                                >
+                                  <svg
+                                    className={`w-4 h-4 transition-transform ${expandedCategories.has(line.id) ? 'rotate-90' : ''} ${effectiveTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                                {editingCategoryId === line.id ? (
+                                  <input
+                                    type="text"
+                                    value={editCategoryName}
+                                    onChange={(e) => setEditCategoryName(e.target.value)}
+                                    onKeyDown={handleCategoryKeyDown}
+                                    className={`flex-1 px-2 py-1 border ${effectiveTheme === 'dark' ? 'border-gray-600 bg-gray-700 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                    placeholder="Category name (Enter to save, Esc to cancel)"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={() => startEditingCategory(line)}
+                                    className="text-left hover:text-blue-600 hover:underline focus:outline-none focus:text-blue-600 focus:underline"
+                                  >
+                                    {line.category}
+                                  </button>
+                                )}
                               </div>
-                            ) : (
-                              `$${line.budgetedAmount.toFixed(2)}`
-                            )}
-                          </td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>${line.actualSpent.toFixed(2)}</td>
-                          <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
-                            ${line.remaining.toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className={`w-16 ${effectiveTheme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'} rounded-full h-2`}>
-                                <div 
-                                  className={`h-2 rounded-full ${isOverBudget ? 'bg-red-500' : percentSpent > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                                  style={{ width: `${Math.min(percentSpent, 100)}%` }}
-                                />
+                            </td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {editingBudgetLineId === line.id ? (
+                                <div className="flex items-center gap-2">
+                                  <span className={`${effectiveTheme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>$</span>
+                                  <input
+                                    type="number"
+                                    value={editAmount}
+                                    onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)}
+                                    onKeyDown={handleBudgetAmountKeyDown}
+                                    className={`w-20 px-2 py-1 border ${effectiveTheme === 'dark' ? 'border-gray-600 bg-gray-700 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                    min="0"
+                                    step="0.01"
+                                    autoFocus
+                                  />
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => startEditing(line)}
+                                  className="text-left hover:text-blue-600 hover:underline focus:outline-none focus:text-blue-600 focus:underline"
+                                >
+                                  ${line.budgetedAmount.toFixed(2)}
+                                </button>
+                              )}
+                            </td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>${line.actualSpent.toFixed(2)}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isOverBudget ? 'text-red-600' : 'text-green-600'}`}>
+                              ${line.remaining.toFixed(2)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className={`w-16 ${effectiveTheme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'} rounded-full h-2`}>
+                                  <div 
+                                    className={`h-2 rounded-full ${isOverBudget ? 'bg-red-500' : percentSpent > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                                    style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                                  />
+                                </div>
+                                <span className={`ml-2 text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{percentSpent.toFixed(0)}%</span>
                               </div>
-                              <span className={`ml-2 text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{percentSpent.toFixed(0)}%</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {editingBudgetLineId === line.id ? (
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                               <div className="flex gap-2">
-                                <button onClick={saveEdit} disabled={updateBudgetMutation.isPending} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-xs font-medium">
-                                  {updateBudgetMutation.isPending ? 'Saving...' : 'Save'}
-                                </button>
-                                <button onClick={cancelEditing} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs font-medium">
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex gap-2">
-                                <button onClick={() => startEditing(line)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">
-                                  Edit Budget
-                                </button>
                                 <button onClick={() => openTransactionModal(budget.id, line.category)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium flex items-center justify-center">
                                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
                                   </svg>
                                 </button>
                               </div>
-                            )}
-                          </td>
-                        </tr>
+                            </td>
+                          </tr>
+                          {expandedCategories.has(line.id) && (
+                            <tr>
+                              <td colSpan={6} className={`px-6 py-0 ${effectiveTheme === 'dark' ? 'bg-gray-750' : 'bg-gray-50'}`}>
+                                <div className="py-4">
+                                  <h4 className={`text-sm font-medium mb-3 ${effectiveTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                    Transactions for {line.category}
+                                  </h4>
+                                  {categoryTransactions[line.id] && categoryTransactions[line.id].length > 0 ? (
+                                    <div className="space-y-2">
+                                      {categoryTransactions[line.id].map((transaction) => (
+                                        <div
+                                          key={transaction.id}
+                                          className={`flex justify-between items-center p-3 rounded-lg ${effectiveTheme === 'dark' ? 'bg-gray-700' : 'bg-white'} border ${effectiveTheme === 'dark' ? 'border-gray-600' : 'border-gray-200'}`}
+                                        >
+                                          <div className="flex-1">
+                                            <div className={`font-medium ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
+                                              {transaction.description}
+                                            </div>
+                                            <div className={`text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                                              {new Date(transaction.date).toLocaleDateString()}
+                                            </div>
+                                          </div>
+                                          <div className={`font-semibold ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
+                                            ${transaction.amount.toFixed(2)}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className={`text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'} italic`}>
+                                      No transactions found for this category.
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       )
                     })}
                   </tbody>
