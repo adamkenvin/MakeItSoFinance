@@ -153,6 +153,16 @@ export default function BudgetTab() {
     }
   }
 
+  const handleCategoryKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      saveCategoryEdit()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelCategoryEditing()
+    }
+  }
+
   const openTransactionModal = (budgetId: string, category?: string) => {
     setSelectedBudgetId(budgetId)
     setSelectedCategory(category || null)
@@ -248,8 +258,9 @@ export default function BudgetTab() {
                                 type="text"
                                 value={editCategoryName}
                                 onChange={(e) => setEditCategoryName(e.target.value)}
+                                onKeyDown={handleCategoryKeyDown}
                                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Category name"
+                                placeholder="Category name (Enter to save, Esc to cancel)"
                                 autoFocus
                               />
                             ) : (
@@ -303,15 +314,6 @@ export default function BudgetTab() {
                                   Cancel
                                 </button>
                               </div>
-                            ) : editingCategoryId === line.id ? (
-                              <div className="flex gap-2">
-                                <button onClick={saveCategoryEdit} disabled={updateCategoryMutation.isPending} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-xs font-medium">
-                                  {updateCategoryMutation.isPending ? 'Saving...' : 'Save'}
-                                </button>
-                                <button onClick={cancelCategoryEditing} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs font-medium">
-                                  Cancel
-                                </button>
-                              </div>
                             ) : (
                               <div className="flex gap-2">
                                 <button onClick={() => startEditing(line)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">
@@ -330,14 +332,6 @@ export default function BudgetTab() {
                     })}
                   </tbody>
                 </table>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => openTransactionModal(budget.id)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                  >
-                    Add Transaction
-                  </button>
-                </div>
               </div>
             </details>
           )
