@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import TransactionForm from './TransactionForm'
 
@@ -26,6 +26,8 @@ interface BudgetData {
 
 export default function BudgetPage() {
   const [showTransactionForm, setShowTransactionForm] = useState(false)
+  const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
+  const [editAmount, setEditAmount] = useState<number>(0)
 
   const { data, isLoading, error, refetch } = useQuery<BudgetData>({
     queryKey: ['budget'],
@@ -38,9 +40,48 @@ export default function BudgetPage() {
     }
   })
 
+  const updateBudgetMutation = useMutation({
+    mutationFn: async ({ budgetLineId, budgetedAmount }: { budgetLineId: string; budgetedAmount: number }) => {
+      const response = await fetch('/api/budget', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ budgetLineId, budgetedAmount }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to update budget')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      refetch() // Refresh the budget data after successful update
+      setEditingBudgetLineId(null) // Exit edit mode
+    }
+  })
+
   const handleTransactionAdded = () => {
     refetch() // Refresh budget data when new transaction is added
     setShowTransactionForm(false)
+  }
+
+  const startEditing = (budgetLine: BudgetLine) => {
+    setEditingBudgetLineId(budgetLine.id)
+    setEditAmount(budgetLine.budgetedAmount)
+  }
+
+  const cancelEditing = () => {
+    setEditingBudgetLineId(null)
+    setEditAmount(0)
+  }
+
+  const saveEdit = () => {
+    if (editingBudgetLineId && editAmount >= 0) {
+      updateBudgetMutation.mutate({
+        budgetLineId: editingBudgetLineId,
+        budgetedAmount: editAmount
+      })
+    }
   }
 
   if (isLoading) return <div className="p-8 text-gray-900">Loading budget...</div>
@@ -89,6 +130,9 @@ export default function BudgetPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Progress
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -102,7 +146,21 @@ export default function BudgetPage() {
                     {line.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${line.budgetedAmount.toFixed(2)}
+                    {editingBudgetLineId === line.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">$</span>
+                        <input
+                          type="number"
+                          value={editAmount}
+                          onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)}
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    ) : (
+                      `$${line.budgetedAmount.toFixed(2)}`
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     ${line.actualSpent.toFixed(2)}
@@ -126,6 +184,32 @@ export default function BudgetPage() {
                         {percentSpent.toFixed(0)}%
                       </span>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {editingBudgetLineId === line.id ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveEdit}
+                          disabled={updateBudgetMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-xs font-medium"
+                        >
+                          {updateBudgetMutation.isPending ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => startEditing(line)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium"
+                      >
+                        Edit Budget
+                      </button>
+                    )}
                   </td>
                 </tr>
               )
