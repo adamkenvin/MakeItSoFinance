@@ -20,13 +20,9 @@ export async function GET() {
     }
 
     // Get or create current month's budget
-    let budget = await prisma.budget.findUnique({
+    let budgets = await prisma.budget.findMany({
       where: {
-        userId_month_year: {
-          userId: user.id,
-          month: currentMonth,
-          year: currentYear
-        }
+        userId: user.id,
       },
       include: {
         budgetLines: {
@@ -34,12 +30,20 @@ export async function GET() {
             transactions: true
           }
         }
-      }
+      },
+      orderBy: [
+        {
+          year: 'desc',
+        },
+        {
+          month: 'desc'
+        }
+      ]
     })
 
-    if (!budget) {
+    if (budgets.length === 0) {
       // Create default budget with some categories
-      budget = await prisma.budget.create({
+      const newBudget = await prisma.budget.create({
         data: {
           name: `Budget ${currentMonth}/${currentYear}`,
           month: currentMonth,
@@ -63,36 +67,116 @@ export async function GET() {
           }
         }
       })
+      budgets = [newBudget]
     }
 
-    // Calculate actual spending for each category
-    const budgetWithActuals = budget.budgetLines.map(line => {
-      const actualSpent = line.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
-      const remaining = line.budgetedAmount - actualSpent
-      
-      return {
-        id: line.id,
-        category: line.category,
-        budgetedAmount: line.budgetedAmount,
-        actualSpent,
-        remaining
-      }
-    })
+    const budgetsWithActuals = budgets.map(budget => {
+      const budgetLinesWithActuals = budget.budgetLines.map(line => {
+        const actualSpent = line.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
+        const remaining = line.budgetedAmount - actualSpent
+        
+        return {
+          id: line.id,
+          category: line.category,
+          budgetedAmount: line.budgetedAmount,
+          actualSpent,
+          remaining
+        }
+      })
 
-    return NextResponse.json({
-      budget: {
+      return {
         id: budget.id,
         name: budget.name,
         month: budget.month,
-        year: budget.year
-      },
-      budgetLines: budgetWithActuals
+        year: budget.year,
+        budgetLines: budgetLinesWithActuals
+      }
     })
+
+    return NextResponse.json(budgetsWithActuals)
   } catch (error) {
-    console.error('Error fetching budget:', error)
-    return NextResponse.json({ error: 'Failed to fetch budget' }, { status: 500 })
+    console.error('Error fetching budgets:', error)
+    return NextResponse.json({ error: 'Failed to fetch budgets' }, { status: 500 })
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    let user = await prisma.user.findFirst()
+    if (!user) {
+      // For simplicity, this assumes a user exists. 
+      // A real app would get the user from the session.
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const latestBudget = await prisma.budget.findFirst({
+      where: { userId: user.id },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+      include: { budgetLines: true }
+    })
+
+    let nextMonth: number, nextYear: number;
+    if (latestBudget) {
+      if (latestBudget.month === 12) {
+        nextMonth = 1
+        nextYear = latestBudget.year + 1
+      } else {
+        nextMonth = latestBudget.month + 1
+        nextYear = latestBudget.year
+      }
+    } else {
+      const currentDate = new Date()
+      nextMonth = currentDate.getMonth() + 2 // Next month
+      nextYear = currentDate.getFullYear()
+      if (nextMonth > 12) {
+        nextMonth = 1
+        nextYear += 1
+      }
+    }
+
+    // Check if a budget for the next month already exists
+    const existingBudget = await prisma.budget.findFirst({
+      where: {
+        userId: user.id,
+        month: nextMonth,
+        year: nextYear
+      }
+    })
+
+    if (existingBudget) {
+      return NextResponse.json({ error: 'Budget for this month already exists' }, { status: 409 })
+    }
+
+    const newBudget = await prisma.budget.create({
+      data: {
+        name: `Budget ${nextMonth}/${nextYear}`,
+        month: nextMonth,
+        year: nextYear,
+        userId: user.id,
+        budgetLines: {
+          // Copy categories from the latest budget, or create default ones
+          create: latestBudget?.budgetLines.map(line => ({
+            category: line.category,
+            budgetedAmount: line.budgetedAmount
+          })) || [
+            { category: 'Groceries', budgetedAmount: 500 },
+            { category: 'Gas', budgetedAmount: 200 },
+            { category: 'Entertainment', budgetedAmount: 150 },
+          ]
+        }
+      },
+      include: {
+        budgetLines: true
+      }
+    })
+
+    return NextResponse.json(newBudget, { status: 201 })
+  } catch (error) {
+    console.error('Error creating new budget:', error)
+    return NextResponse.json({ error: 'Failed to create new budget' }, { status: 500 })
+  }
+}
+
 
 export async function PATCH(request: Request) {
   try {
