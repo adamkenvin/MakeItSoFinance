@@ -25,6 +25,8 @@ export default function BudgetTab() {
   const [showTransactionModal, setShowTransactionModal] = useState(false)
   const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<number>(0)
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [editCategoryName, setEditCategoryName] = useState<string>('')
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
@@ -57,6 +59,27 @@ export default function BudgetTab() {
       queryClient.invalidateQueries({ queryKey: ['budgets'] })
       queryClient.invalidateQueries({ queryKey: ['categories'] })
       setEditingBudgetLineId(null) // Exit edit mode
+    }
+  })
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ budgetLineId, category }: { budgetLineId: string; category: string }) => {
+      const response = await fetch('/api/budget/category', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ budgetLineId, category }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to update category name')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      setEditingCategoryId(null) // Exit edit mode
     }
   })
 
@@ -99,6 +122,25 @@ export default function BudgetTab() {
       updateBudgetMutation.mutate({
         budgetLineId: editingBudgetLineId,
         budgetedAmount: editAmount
+      })
+    }
+  }
+
+  const startEditingCategory = (budgetLine: BudgetLine) => {
+    setEditingCategoryId(budgetLine.id)
+    setEditCategoryName(budgetLine.category)
+  }
+
+  const cancelCategoryEditing = () => {
+    setEditingCategoryId(null)
+    setEditCategoryName('')
+  }
+
+  const saveCategoryEdit = () => {
+    if (editingCategoryId && editCategoryName.trim()) {
+      updateCategoryMutation.mutate({
+        budgetLineId: editingCategoryId,
+        category: editCategoryName.trim()
       })
     }
   }
@@ -172,7 +214,25 @@ export default function BudgetTab() {
 
                       return (
                         <tr key={line.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{line.category}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {editingCategoryId === line.id ? (
+                              <input
+                                type="text"
+                                value={editCategoryName}
+                                onChange={(e) => setEditCategoryName(e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Category name"
+                                autoFocus
+                              />
+                            ) : (
+                              <button
+                                onClick={() => startEditingCategory(line)}
+                                className="text-left hover:text-blue-600 hover:underline focus:outline-none focus:text-blue-600 focus:underline"
+                              >
+                                {line.category}
+                              </button>
+                            )}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {editingBudgetLineId === line.id ? (
                               <div className="flex items-center gap-2">
@@ -212,6 +272,15 @@ export default function BudgetTab() {
                                   {updateBudgetMutation.isPending ? 'Saving...' : 'Save'}
                                 </button>
                                 <button onClick={cancelEditing} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs font-medium">
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : editingCategoryId === line.id ? (
+                              <div className="flex gap-2">
+                                <button onClick={saveCategoryEdit} disabled={updateCategoryMutation.isPending} className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded text-xs font-medium">
+                                  {updateCategoryMutation.isPending ? 'Saving...' : 'Save'}
+                                </button>
+                                <button onClick={cancelCategoryEditing} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs font-medium">
                                   Cancel
                                 </button>
                               </div>
