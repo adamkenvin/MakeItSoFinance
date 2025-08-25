@@ -1,20 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient()
-
-// GET /api/categories - List all categories
+// GET /api/categories - List all categories from budget lines
 export async function GET(request: NextRequest) {
   try {
-    // For now, we'll use a demo user ID since auth isn't fully implemented
-    const demoUserId = 'demo-user-id'
-    
-    const categories = await prisma.category.findMany({
+    // Get the current user (using same logic as budget API)
+    let user = await prisma.user.findFirst()
+    if (!user) {
+      return NextResponse.json({ 
+        categories: [],
+        count: 0 
+      })
+    }
+
+    // Get current budget and extract categories from budget lines
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth() + 1
+    const currentYear = currentDate.getFullYear()
+
+    const budget = await prisma.budget.findUnique({
       where: {
-        userId: demoUserId
+        userId_month_year: {
+          userId: user.id,
+          month: currentMonth,
+          year: currentYear
+        }
       },
-      orderBy: {
-        createdAt: 'desc'
+      include: {
+        budgetLines: {
+          include: {
+            transactions: true
+          }
+        }
+      }
+    })
+
+    if (!budget) {
+      return NextResponse.json({ 
+        categories: [],
+        count: 0 
+      })
+    }
+
+    // Transform budget lines into category format
+    const categories = budget.budgetLines.map(line => {
+      const actualSpent = line.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
+      return {
+        id: line.id,
+        name: line.category,
+        description: `Budget: $${line.budgetedAmount.toFixed(2)}, Spent: $${actualSpent.toFixed(2)}`,
+        createdAt: line.createdAt,
+        updatedAt: line.updatedAt
       }
     })
 
@@ -31,11 +67,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/categories - Create a new category
+// POST /api/categories - Create a new category (budget line)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, description } = body
+    const { name, budgetedAmount = 0 } = body
 
     // Basic validation
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -45,35 +81,84 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, we'll use a demo user ID since auth isn't fully implemented
-    const demoUserId = 'demo-user-id'
+    if (typeof budgetedAmount !== 'number' || budgetedAmount < 0) {
+      return NextResponse.json(
+        { error: 'Budgeted amount must be a non-negative number' },
+        { status: 400 }
+      )
+    }
 
-    // Check if category already exists for this user
-    const existingCategory = await prisma.category.findFirst({
+    // Get the current user
+    let user = await prisma.user.findFirst()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No user found' },
+        { status: 404 }
+      )
+    }
+
+    // Get current budget
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth() + 1
+    const currentYear = currentDate.getFullYear()
+
+    let budget = await prisma.budget.findUnique({
       where: {
-        userId: demoUserId,
-        name: name.trim()
+        userId_month_year: {
+          userId: user.id,
+          month: currentMonth,
+          year: currentYear
+        }
+      },
+      include: {
+        budgetLines: true
       }
     })
 
-    if (existingCategory) {
+    if (!budget) {
+      // Create budget if it doesn't exist
+      budget = await prisma.budget.create({
+        data: {
+          name: `Budget ${currentMonth}/${currentYear}`,
+          month: currentMonth,
+          year: currentYear,
+          userId: user.id
+        },
+        include: {
+          budgetLines: true
+        }
+      })
+    }
+
+    // Check if category already exists in this budget
+    const existingLine = budget.budgetLines.find(line => 
+      line.category.toLowerCase() === name.trim().toLowerCase()
+    )
+
+    if (existingLine) {
       return NextResponse.json(
         { error: 'A category with this name already exists' },
         { status: 409 }
       )
     }
 
-    // Create the category
-    const category = await prisma.category.create({
+    // Create the budget line
+    const budgetLine = await prisma.budgetLine.create({
       data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        userId: demoUserId
+        category: name.trim(),
+        budgetedAmount,
+        budgetId: budget.id
       }
     })
 
     return NextResponse.json({ 
-      category,
+      category: {
+        id: budgetLine.id,
+        name: budgetLine.category,
+        description: `Budget: $${budgetLine.budgetedAmount.toFixed(2)}, Spent: $0.00`,
+        createdAt: budgetLine.createdAt,
+        updatedAt: budgetLine.updatedAt
+      },
       message: 'Category created successfully' 
     }, { status: 201 })
   } catch (error) {

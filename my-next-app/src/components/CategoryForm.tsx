@@ -9,7 +9,7 @@ interface CategoryFormProps {
 export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    budgetedAmount: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -25,7 +25,10 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          budgetedAmount: parseFloat(formData.budgetedAmount) || 0
+        }),
       })
 
       if (!response.ok) {
@@ -35,7 +38,7 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
       // Reset form
       setFormData({
         name: '',
-        description: ''
+        budgetedAmount: ''
       })
 
       onCategoryAdded() // This will refresh the categories data
@@ -79,17 +82,19 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-            Description (Optional)
+          <label htmlFor="budgetedAmount" className="block text-sm font-medium text-gray-700 mb-1">
+            Budget Amount ($)
           </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
+          <input
+            type="number"
+            id="budgetedAmount"
+            name="budgetedAmount"
+            value={formData.budgetedAmount}
             onChange={handleChange}
-            rows={3}
+            min="0"
+            step="0.01"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-            placeholder="Brief description of this category..."
+            placeholder="0.00"
           />
         </div>
 

@@ -1,51 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient()
-
-// DELETE /api/categories/[id] - Delete a category
+// DELETE /api/categories/[id] - Delete a category (budget line)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const categoryId = params.id
+    const budgetLineId = params.id
 
-    if (!categoryId) {
+    if (!budgetLineId) {
       return NextResponse.json(
         { error: 'Category ID is required' },
         { status: 400 }
       )
     }
 
-    // For now, we'll use a demo user ID since auth isn't fully implemented
-    const demoUserId = 'demo-user-id'
+    // Get the current user
+    let user = await prisma.user.findFirst()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No user found' },
+        { status: 404 }
+      )
+    }
 
-    // Check if category exists and belongs to the user
-    const existingCategory = await prisma.category.findFirst({
+    // Check if budget line exists and belongs to the user
+    const existingBudgetLine = await prisma.budgetLine.findFirst({
       where: {
-        id: categoryId,
-        userId: demoUserId
+        id: budgetLineId,
+        budget: {
+          userId: user.id
+        }
+      },
+      include: {
+        budget: true,
+        transactions: true
       }
     })
 
-    if (!existingCategory) {
+    if (!existingBudgetLine) {
       return NextResponse.json(
         { error: 'Category not found or you do not have permission to delete it' },
         { status: 404 }
       )
     }
 
-    // Delete the category
-    await prisma.category.delete({
+    // Check if there are transactions associated with this category
+    if (existingBudgetLine.transactions.length > 0) {
+      return NextResponse.json(
+        { error: 'Cannot delete category with existing transactions. Please delete transactions first.' },
+        { status: 400 }
+      )
+    }
+
+    // Delete the budget line
+    await prisma.budgetLine.delete({
       where: {
-        id: categoryId
+        id: budgetLineId
       }
     })
 
     return NextResponse.json({ 
       message: 'Category deleted successfully',
-      deletedCategory: existingCategory 
+      deletedCategory: {
+        id: existingBudgetLine.id,
+        name: existingBudgetLine.category
+      }
     })
   } catch (error) {
     console.error('Error deleting category:', error)
