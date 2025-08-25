@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  budgets Budget[]
+
+  @@map("users")
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  name      String
+  month     Int      // 1-12
+  year      Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  budgetLines BudgetLine[]
+  transactions Transaction[]
+
+  @@unique([userId, month, year])
+  @@map("budgets")
+}
+
+model BudgetLine {
+  id            String  @id @default(cuid())
+  category      String
+  budgetedAmount Float
+  budgetId      String
+  budget        Budget  @relation(fields: [budgetId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@unique([budgetId, category])
+  @@map("budget_lines")
+}
+
+model Transaction {
+  id            String     @id @default(cuid())
+  description   String
+  amount        Float
+  category      String
+  date          DateTime
+  budgetId      String
+  budgetLineId  String?
+  budget        Budget     @relation(fields: [budgetId], references: [id])
+  budgetLine    BudgetLine? @relation(fields: [budgetLineId], references: [id])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@map("transactions")
+}
