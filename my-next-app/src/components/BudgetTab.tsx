@@ -55,6 +55,7 @@ export default function BudgetTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
       setEditingBudgetLineId(null) // Exit edit mode
     }
   })
@@ -74,6 +75,7 @@ export default function BudgetTab() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
     }
   })
 
