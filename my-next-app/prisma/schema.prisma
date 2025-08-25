@@ -18,6 +18,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   budgets Budget[]
+  categories Category[]
 
   @@map("users")
 }
@@ -52,6 +53,18 @@ model BudgetLine {
 
   @@unique([budgetId, category])
   @@map("budget_lines")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
 }
 
 model Transaction {

@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import BudgetTab from './BudgetTab'
 import TransactionTab from './TransactionTab'
+import CategoryTab from './CategoryTab'
 
-type TabType = 'budget' | 'transactions'
+type TabType = 'budget' | 'transactions' | 'categories'
 
 export default function TabContainer() {
   const [activeTab, setActiveTab] = useState<TabType>('budget')
@@ -34,6 +35,16 @@ export default function TabContainer() {
           >
             Transactions
           </button>
+          <button
+            onClick={() => setActiveTab('categories')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'categories'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Categories
+          </button>
         </nav>
       </div>
 
@@ -41,6 +52,7 @@ export default function TabContainer() {
       <div className="tab-content">
         {activeTab === 'budget' && <BudgetTab />}
         {activeTab === 'transactions' && <TransactionTab />}
+        {activeTab === 'categories' && <CategoryTab />}
       </div>
     </div>
   )
