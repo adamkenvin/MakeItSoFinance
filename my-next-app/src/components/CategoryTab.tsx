@@ -41,8 +41,9 @@ export default function CategoryTab() {
       return response.json()
     },
     onSuccess: () => {
-      // Refresh categories data
+      // Refresh both categories and budget data since they're connected
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['budget'] })
     },
     onError: (error) => {
       console.error('Error deleting category:', error)
@@ -51,8 +52,9 @@ export default function CategoryTab() {
   })
 
   const handleCategoryAdded = () => {
-    // Refresh categories data
+    // Refresh both categories and budget data since they're connected
     queryClient.invalidateQueries({ queryKey: ['categories'] })
+    queryClient.invalidateQueries({ queryKey: ['budget'] })
     setShowCategoryForm(false)
   }
 
