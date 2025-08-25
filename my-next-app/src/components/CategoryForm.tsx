@@ -19,6 +19,14 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
     setIsSubmitting(true)
     setError('')
 
+    // Validate budget amount
+    const budgetAmount = parseFloat(formData.budgetedAmount)
+    if (!formData.budgetedAmount || isNaN(budgetAmount) || budgetAmount <= 0) {
+      setError('Budget amount is required and must be greater than $0')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
@@ -27,7 +35,7 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
         },
         body: JSON.stringify({
           name: formData.name,
-          budgetedAmount: parseFloat(formData.budgetedAmount) || 0
+          budgetedAmount: budgetAmount
         }),
       })
 
@@ -83,7 +91,7 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
 
         <div>
           <label htmlFor="budgetedAmount" className="block text-sm font-medium text-gray-700 mb-1">
-            Budget Amount ($)
+            Budget Amount ($) <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -91,11 +99,13 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
             name="budgetedAmount"
             value={formData.budgetedAmount}
             onChange={handleChange}
-            min="0"
+            required
+            min="0.01"
             step="0.01"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-            placeholder="0.00"
+            placeholder="Enter budget amount (e.g., 500.00)"
           />
+          <p className="mt-1 text-xs text-gray-500">This will be the allocated budget for this category</p>
         </div>
 
         <div className="flex gap-3">
