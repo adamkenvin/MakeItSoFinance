@@ -43,7 +43,7 @@ export default function BudgetPage() {
     setShowTransactionForm(false)
   }
 
-  if (isLoading) return <div className="p-8">Loading budget...</div>
+  if (isLoading) return <div className="p-8 text-gray-900">Loading budget...</div>
   if (error) return <div className="p-8 text-red-500">Error loading budget: {String(error)}</div>
   if (!data) return <div className="p-8">No budget data found</div>
 
