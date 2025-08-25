@@ -3,10 +3,11 @@
 import { useState } from 'react'
 
 interface CategoryFormProps {
+  budgetId: string
   onCategoryAdded: () => void
 }
 
-export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
+export default function CategoryForm({ budgetId, onCategoryAdded }: CategoryFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     budgetedAmount: ''
@@ -35,7 +36,8 @@ export default function CategoryForm({ onCategoryAdded }: CategoryFormProps) {
         },
         body: JSON.stringify({
           name: formData.name,
-          budgetedAmount: budgetAmount
+          budgetedAmount: budgetAmount,
+          budgetId: budgetId
         }),
       })
 

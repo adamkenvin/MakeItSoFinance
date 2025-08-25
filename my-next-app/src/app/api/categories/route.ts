@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, budgetedAmount = 0 } = body
+    const { name, budgetedAmount = 0, budgetId } = body
 
     // Basic validation
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -88,6 +88,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!budgetId) {
+        return NextResponse.json(
+            { error: 'budgetId is required' },
+            { status: 400 }
+        )
+    }
+
     // Get the current user
     let user = await prisma.user.findFirst()
     if (!user) {
@@ -97,37 +104,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current budget
-    const currentDate = new Date()
-    const currentMonth = currentDate.getMonth() + 1
-    const currentYear = currentDate.getFullYear()
-
-    let budget = await prisma.budget.findUnique({
-      where: {
-        userId_month_year: {
-          userId: user.id,
-          month: currentMonth,
-          year: currentYear
+    // Get budget by budgetId
+    const budget = await prisma.budget.findUnique({
+        where: {
+            id: budgetId,
+        },
+        include: {
+            budgetLines: true
         }
-      },
-      include: {
-        budgetLines: true
-      }
     })
 
     if (!budget) {
-      // Create budget if it doesn't exist
-      budget = await prisma.budget.create({
-        data: {
-          name: `Budget ${currentMonth}/${currentYear}`,
-          month: currentMonth,
-          year: currentYear,
-          userId: user.id
-        },
-        include: {
-          budgetLines: true
-        }
-      })
+      return NextResponse.json(
+        { error: 'Budget not found' },
+        { status: 404 }
+      )
     }
 
     // Check if category already exists in this budget
