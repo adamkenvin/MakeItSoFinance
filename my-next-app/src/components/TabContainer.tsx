@@ -2,8 +2,11 @@
 
 import BudgetTab from './BudgetTab'
 import ThemeToggle from './ThemeToggle'
+import { useTheme } from '../contexts/ThemeContext'
 
 export default function TabContainer() {
+  const { effectiveTheme } = useTheme()
+  
   return (
     <div className="max-w-6xl mx-auto p-6 bg-transparent">
       {/* Header with theme toggle */}
@@ -13,15 +16,13 @@ export default function TabContainer() {
             MakeItSo Finance
           </h1>
           {/* Debug indicator */}
-          <div className="px-2 py-1 text-xs rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-            <span className="dark:hidden">Light Mode Active</span>
-            <span className="hidden dark:inline">Dark Mode Active</span>
+          <div className={`px-2 py-1 text-xs rounded ${effectiveTheme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'}`}>
+            {effectiveTheme === 'dark' ? 'Dark Mode Active' : 'Light Mode Active'}
           </div>
           
           {/* Obvious dark mode test */}
-          <div className="px-3 py-2 text-sm font-bold rounded-lg bg-white dark:bg-red-500 text-black dark:text-white border-2 border-gray-300 dark:border-red-600">
-            <span className="dark:hidden">🔆 LIGHT</span>
-            <span className="hidden dark:inline">🌙 DARK</span>
+          <div className={`px-3 py-2 text-sm font-bold rounded-lg border-2 ${effectiveTheme === 'dark' ? 'bg-red-500 text-white border-red-600' : 'bg-white text-black border-gray-300'}`}>
+            {effectiveTheme === 'dark' ? '🌙 DARK' : '🔆 LIGHT'}
           </div>
         </div>
         <ThemeToggle />
