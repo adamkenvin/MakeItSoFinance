@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 interface BudgetLine {
@@ -26,6 +26,7 @@ interface BudgetData {
 export default function BudgetTab() {
   const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<number>(0)
+  const queryClient = useQueryClient()
 
   const { data, isLoading, error, refetch } = useQuery<BudgetData>({
     queryKey: ['budget'],
@@ -53,7 +54,9 @@ export default function BudgetTab() {
       return response.json()
     },
     onSuccess: () => {
-      refetch() // Refresh the budget data after successful update
+      // Refresh both budget and categories data since they're connected
+      queryClient.invalidateQueries({ queryKey: ['budget'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
       setEditingBudgetLineId(null) // Exit edit mode
     }
   })
