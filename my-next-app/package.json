@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -12,8 +12,10 @@
     "@prisma/client": "^6.14.0",
     "@t3-oss/env-nextjs": "^0.7.1",
     "@tanstack/react-query": "^5.85.5",
+    "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^2.4.3",
     "jose": "^5.1.3",
+    "jsonwebtoken": "^9.0.2",
     "next": "15.5.0",
     "next-auth": "^4.24.5",
     "prisma": "^6.14.0",
