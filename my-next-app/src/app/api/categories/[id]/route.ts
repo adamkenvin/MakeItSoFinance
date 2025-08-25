@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma'
 // DELETE /api/categories/[id] - Delete a category (budget line)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const budgetLineId = params.id
+    const { id: budgetLineId } = await params
 
     if (!budgetLineId) {
       return NextResponse.json(
@@ -80,10 +80,10 @@ export async function DELETE(
 // GET /api/categories/[id] - Get a specific category
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const categoryId = params.id
+    const { id: categoryId } = await params
 
     if (!categoryId) {
       return NextResponse.json(
