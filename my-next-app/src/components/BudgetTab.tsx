@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import TransactionForm from './TransactionForm'
 import Modal from './Modal'
+import CategoryForm from './CategoryForm'
 
 interface BudgetLine {
   id: string
@@ -26,6 +27,7 @@ export default function BudgetTab() {
   const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<number>(0)
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
+  const [addingCategoryId, setAddingCategoryId] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data: budgets, isLoading, error, refetch } = useQuery<BudgetData[]>({
@@ -82,6 +84,11 @@ export default function BudgetTab() {
     setShowTransactionModal(false)
   }
 
+  const handleCategoryAdded = () => {
+    queryClient.invalidateQueries({ queryKey: ['budgets'] })
+    setAddingCategoryId(null)
+  }
+
   const startEditing = (budgetLine: BudgetLine) => {
     setEditingBudgetLineId(budgetLine.id)
     setEditAmount(budgetLine.budgetedAmount)
@@ -135,9 +142,23 @@ export default function BudgetTab() {
             <details key={budget.id} className="bg-white shadow-lg rounded-lg overflow-hidden" open={index === 0}>
               <summary className="p-6 cursor-pointer hover:bg-gray-50">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {budget.name}
-                  </h2>
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {budget.name}
+                    </h2>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setAddingCategoryId(addingCategoryId === budget.id ? null : budget.id)
+                      }}
+                      className="text-green-600 hover:text-green-800"
+                      aria-label="Add category"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </button>
+                  </div>
                   <div className="flex gap-6 text-lg">
                     <span className="text-blue-600 font-semibold">
                       Budgeted: ${totalBudgeted.toFixed(2)}
@@ -152,6 +173,11 @@ export default function BudgetTab() {
                 </div>
               </summary>
               <div className="p-6 border-t border-gray-200">
+                {addingCategoryId === budget.id && (
+                  <div className="mb-6">
+                    <CategoryForm budgetId={budget.id} onCategoryAdded={handleCategoryAdded} />
+                  </div>
+                )}
                 <table className="w-full mb-6">
                   <thead className="bg-gray-50">
                     <tr>
@@ -224,12 +250,14 @@ export default function BudgetTab() {
                     })}
                   </tbody>
                 </table>
-                <button
-                  onClick={() => openTransactionModal(budget.id)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  Add Transaction
-                </button>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => openTransactionModal(budget.id)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  >
+                    Add Transaction
+                  </button>
+                </div>
               </div>
             </details>
           )
@@ -245,9 +273,9 @@ export default function BudgetTab() {
           maxWidth="3xl"
         >
           <TransactionForm 
+            budgetId={selectedBudget.id}
             budgetLines={selectedBudget.budgetLines}
             onTransactionAdded={handleTransactionAdded}
-            budgetId={selectedBudget.id}
           />
         </Modal>
       )}
