@@ -16,15 +16,6 @@ export default function TabContainer() {
           <h1 className={`text-2xl font-bold ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
             MakeItSo Finance
           </h1>
-          {/* Debug indicator */}
-          <div className={`px-2 py-1 text-xs rounded ${effectiveTheme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'}`}>
-            {effectiveTheme === 'dark' ? 'Dark Mode Active' : 'Light Mode Active'}
-          </div>
-          
-          {/* Obvious dark mode test */}
-          <div className={`px-3 py-2 text-sm font-bold rounded-lg border-2 ${effectiveTheme === 'dark' ? 'bg-red-500 text-white border-red-600' : 'bg-white text-black border-gray-300'}`}>
-            {effectiveTheme === 'dark' ? '🌙 DARK' : '🔆 LIGHT'}
-          </div>
         </div>
         <ThemeToggle />
       </div>
