@@ -14,13 +14,14 @@ interface TransactionFormProps {
   budgetLines: BudgetLine[]
   onTransactionAdded: () => void
   budgetId: string
+  preselectedCategory?: string
 }
 
-export default function TransactionForm({ budgetLines, onTransactionAdded, budgetId }: TransactionFormProps) {
+export default function TransactionForm({ budgetLines, onTransactionAdded, budgetId, preselectedCategory }: TransactionFormProps) {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    category: '',
+    category: preselectedCategory || '',
     date: new Date().toISOString().split('T')[0] // Today's date
   })
   const [isSubmitting, setIsSubmitting] = useState(false)

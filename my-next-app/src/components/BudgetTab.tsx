@@ -26,6 +26,7 @@ export default function BudgetTab() {
   const [editingBudgetLineId, setEditingBudgetLineId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState<number>(0)
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data: budgets, isLoading, error, refetch } = useQuery<BudgetData[]>({
@@ -103,8 +104,9 @@ export default function BudgetTab() {
     }
   }
 
-  const openTransactionModal = (budgetId: string) => {
+  const openTransactionModal = (budgetId: string, category?: string) => {
     setSelectedBudgetId(budgetId)
+    setSelectedCategory(category || null)
     setShowTransactionModal(true)
   }
 
@@ -216,9 +218,16 @@ export default function BudgetTab() {
                                 </button>
                               </div>
                             ) : (
-                              <button onClick={() => startEditing(line)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">
-                                Edit Budget
-                              </button>
+                              <div className="flex gap-2">
+                                <button onClick={() => startEditing(line)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium">
+                                  Edit Budget
+                                </button>
+                                <button onClick={() => openTransactionModal(budget.id, line.category)} className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium flex items-center justify-center">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                                  </svg>
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -226,12 +235,6 @@ export default function BudgetTab() {
                     })}
                   </tbody>
                 </table>
-                <button
-                  onClick={() => openTransactionModal(budget.id)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  Add Transaction
-                </button>
               </div>
             </details>
           )
@@ -250,6 +253,7 @@ export default function BudgetTab() {
             budgetLines={selectedBudget.budgetLines}
             onTransactionAdded={handleTransactionAdded}
             budgetId={selectedBudget.id}
+            preselectedCategory={selectedCategory || undefined}
           />
         </Modal>
       )}
