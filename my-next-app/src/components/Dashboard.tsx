@@ -55,6 +55,10 @@ export default function Dashboard() {
   const [addingCategoryId, setAddingCategoryId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  
+  // Transaction editing state
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null)
+  const [editTransactionAmount, setEditTransactionAmount] = useState<number>(0)
 
   const { data: budgets, isLoading, error, refetch } = useQuery<BudgetData[]>({
     queryKey: ['budgets'],
@@ -121,6 +125,29 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] })
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+    }
+  })
+
+  const updateTransactionMutation = useMutation({
+    mutationFn: async ({ id, amount, description, category, date }: { 
+      id: string; 
+      amount: number; 
+      description: string; 
+      category: string; 
+      date: string; 
+    }) => {
+      const response = await fetch('/api/transactions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, amount, description, category, date }),
+      })
+      if (!response.ok) throw new Error('Failed to update transaction')
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      setEditingTransactionId(null)
     }
   })
 
@@ -196,6 +223,39 @@ export default function Dashboard() {
   const openTransactionModal = (category?: string) => {
     setSelectedCategory(category || null)
     setShowTransactionModal(true)
+  }
+
+  // Transaction editing handlers
+  const startEditingTransaction = (transaction: Transaction) => {
+    setEditingTransactionId(transaction.id)
+    setEditTransactionAmount(Math.abs(transaction.amount))
+  }
+
+  const cancelTransactionEditing = () => {
+    setEditingTransactionId(null)
+    setEditTransactionAmount(0)
+  }
+
+  const saveTransactionEdit = (transaction: Transaction) => {
+    if (editingTransactionId && editTransactionAmount >= 0) {
+      updateTransactionMutation.mutate({
+        id: editingTransactionId,
+        amount: transaction.amount < 0 ? -editTransactionAmount : editTransactionAmount,
+        description: transaction.description,
+        category: transaction.category,
+        date: transaction.date
+      })
+    }
+  }
+
+  const handleTransactionKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, transaction: Transaction) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      saveTransactionEdit(transaction)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      cancelTransactionEditing()
+    }
   }
 
   // Fetch transactions for all expanded categories
@@ -695,9 +755,50 @@ export default function Dashboard() {
                                         {new Date(transaction.date).toLocaleDateString()}
                                       </div>
                                     </div>
-                                    <div className={`font-semibold ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                      ${Math.abs(transaction.amount).toFixed(2)}
-                                    </div>
+                                    {editingTransactionId === transaction.id ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className={`${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>$</span>
+                                        <input
+                                          type="number"
+                                          value={editTransactionAmount}
+                                          onChange={(e) => setEditTransactionAmount(parseFloat(e.target.value) || 0)}
+                                          onKeyDown={(e) => handleTransactionKeyDown(e, transaction)}
+                                          className={`w-20 px-2 py-1 border ${effectiveTheme === 'dark' ? 'border-gray-600 bg-gray-700 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="Enter to save"
+                                          autoFocus
+                                        />
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={() => saveTransactionEdit(transaction)}
+                                            className="text-green-600 hover:text-green-800 p-1"
+                                            title="Save"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={cancelTransactionEditing}
+                                            className="text-red-600 hover:text-red-800 p-1"
+                                            title="Cancel"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={() => startEditingTransaction(transaction)}
+                                        className={`font-semibold ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'} hover:underline focus:outline-none focus:underline`}
+                                        title="Click to edit amount"
+                                      >
+                                        ${Math.abs(transaction.amount).toFixed(2)}
+                                      </button>
+                                    )}
                                   </div>
                                 ))}
                               </div>
