@@ -1,20 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Dashboard from './Dashboard'
 import ThemeToggle from './ThemeToggle'
 import { useTheme } from '../contexts/ThemeContext'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function TabContainer() {
   const { effectiveTheme } = useTheme()
-  const { data: session, status } = useSession()
+  const { user, loading, logout } = useAuth()
   const router = useRouter()
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   // If not authenticated, redirect to signin
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${effectiveTheme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
@@ -27,13 +27,14 @@ export default function TabContainer() {
     )
   }
 
-  if (status === 'unauthenticated') {
+  if (!user) {
     router.push('/auth/signin')
     return null
   }
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/auth/signin' })
+    await logout()
+    router.push('/auth/signin')
   }
   
   return (
@@ -62,11 +63,11 @@ export default function TabContainer() {
               >
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
-                    {session?.user?.email?.[0]?.toUpperCase() || 'U'}
+                    {user?.email?.[0]?.toUpperCase() || 'U'}
                   </span>
                 </div>
                 <span className="hidden sm:block text-sm">
-                  {session?.user?.email}
+                  {user?.email}
                 </span>
                 <svg 
                   className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} 
@@ -90,7 +91,7 @@ export default function TabContainer() {
                         : 'text-gray-700 border-gray-200'
                     }`}>
                       <div className="font-medium">Signed in as</div>
-                      <div className="text-xs opacity-75">{session?.user?.email}</div>
+                      <div className="text-xs opacity-75">{user?.email}</div>
                     </div>
                     
                     <div className={`border-t ${effectiveTheme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>

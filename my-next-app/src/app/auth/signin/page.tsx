@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { signIn, getSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function SignInPage() {
   const { effectiveTheme } = useTheme()
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const { user, login } = useAuth()
   
   const [formData, setFormData] = useState({
     email: '',
@@ -17,32 +17,12 @@ export default function SignInPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Extract error and callback URL from search params
-  const errorParam = searchParams?.get('error')
-  const callbackUrl = searchParams?.get('callbackUrl') || '/'
-
-  // Handle authentication errors from URL
-  useEffect(() => {
-    if (errorParam) {
-      const errorMessages: Record<string, string> = {
-        'CredentialsSignin': 'Invalid credentials. Please check your email and password.',
-        'default': 'Unable to sign in. Please try again.',
-      }
-      
-      setError(errorMessages[errorParam] || errorMessages.default)
-    }
-  }, [errorParam])
-
   // Check if user is already authenticated
   useEffect(() => {
-    const checkSession = async () => {
-      const session = await getSession()
-      if (session) {
-        router.push(callbackUrl)
-      }
+    if (user) {
+      router.push('/')
     }
-    checkSession()
-  }, [callbackUrl, router])
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,17 +36,12 @@ export default function SignInPage() {
     setError('')
 
     try {
-      const result = await signIn('credentials', {
-        email: formData.email.toLowerCase().trim(),
-        password: formData.password,
-        callbackUrl: callbackUrl,
-        redirect: false,
-      })
+      const success = await login(formData.email.toLowerCase().trim(), formData.password)
 
-      if (result?.error) {
+      if (success) {
+        router.push('/')
+      } else {
         setError('Invalid credentials. Please check your email and password.')
-      } else if (result?.ok) {
-        router.push(callbackUrl)
       }
     } catch (error) {
       console.error('Sign in error:', error)
