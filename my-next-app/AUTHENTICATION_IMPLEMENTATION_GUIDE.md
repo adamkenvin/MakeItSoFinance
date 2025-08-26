@@ -1,8 +1,8 @@
-# MakeItSo Finance - NextAuth.js Authentication Implementation Guide
+# Captain's Ledger - NextAuth.js Authentication Implementation Guide
 
 ## 🚀 Quick Start Overview
 
-The NextAuth.js authentication system for MakeItSo Finance has been successfully implemented with enterprise-grade security features specifically designed for financial applications.
+The NextAuth.js authentication system for Captain's Ledger has been successfully implemented with enterprise-grade security features specifically designed for financial applications.
 
 ### ✅ What's Implemented
 
@@ -191,7 +191,7 @@ export default function SignInPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to MakeItSo Finance
+            Sign in to Captain's Ledger
           </h2>
           {expired && (
             <p className="mt-2 text-center text-sm text-red-600">
@@ -288,7 +288,7 @@ export default function DashboardPage() {
           <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
             <div className="text-center">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                Welcome to MakeItSo Finance
+                Welcome to Captain's Ledger
               </h2>
               <p className="text-gray-600 mb-4">
                 Role: <span className="font-medium">{auth.user?.role}</span>

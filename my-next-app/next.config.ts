@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 /**
- * MakeItSo Finance - Vercel Deployment Configuration
+ * Captain's Ledger - Vercel Deployment Configuration
  * Simplified configuration optimized for Vercel deployment
  */
 

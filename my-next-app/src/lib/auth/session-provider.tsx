@@ -6,7 +6,7 @@ import { Session } from "next-auth";
 import { env } from "@/lib/env";
 
 /**
- * MakeItSo Finance - Enhanced Session Provider
+ * Captain's Ledger - Enhanced Session Provider
  * 
  * Wraps NextAuth SessionProvider with additional security features
  * including session timeout handling, activity monitoring, and
@@ -200,7 +200,7 @@ export function SessionProvider({ children, session }: SessionProviderProps) {
   // Security warning for development
   useEffect(() => {
     if (env.NODE_ENV === "development" && isClient) {
-      console.log("🔒 MakeItSo Finance - Security Enhanced Session Provider Loaded");
+      console.log("🔒 Captain's Ledger - Security Enhanced Session Provider Loaded");
       console.log("📊 Session timeout:", env.SESSION_TIMEOUT_MINUTES, "minutes");
       console.log("🛡️ Security features: Activity monitoring, timeout handling, storage monitoring");
     }

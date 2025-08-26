@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Validation Library Index
+ * Captain's Ledger - Validation Library Index
  * 
  * Centralized exports for the complete validation system
  * including schemas, types, and utilities.

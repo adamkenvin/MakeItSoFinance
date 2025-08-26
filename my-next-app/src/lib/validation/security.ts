@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Security Validation Schemas
+ * Captain's Ledger - Security Validation Schemas
  * 
  * Security-focused validation schemas for XSS prevention, injection prevention,
  * input sanitization, and suspicious pattern detection.

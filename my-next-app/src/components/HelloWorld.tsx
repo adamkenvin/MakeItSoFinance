@@ -11,7 +11,7 @@ const HelloWorld: React.FC<HelloWorldProps> = ({ name = 'World' }) => {
         Hello, {name}! 👋
       </h2>
       <p className="text-gray-700">
-        Welcome to the MakeItSo Finance application!
+        Welcome to the Captain's Ledger application!
       </p>
       <div className="mt-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700">
         <p className="font-semibold">🎉 Success!</p>

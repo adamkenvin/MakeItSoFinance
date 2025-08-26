@@ -5,7 +5,7 @@ import { ExtendedSession, ExtendedUser, Permission, UserRole, SecurityLevel, Acc
 import { env } from "@/lib/env";
 
 /**
- * MakeItSo Finance - Authentication Utilities
+ * Captain's Ledger - Authentication Utilities
  * 
  * Comprehensive authentication utilities for financial applications
  * including password hashing, permission checking, session validation,

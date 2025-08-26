@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Validation Types
+ * Captain's Ledger - Validation Types
  * 
  * TypeScript types generated from Zod validation schemas
  * for type-safe form handling and API validation.

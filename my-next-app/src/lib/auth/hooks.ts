@@ -8,7 +8,7 @@ import { authUtils, securityUtils } from "./utils";
 import { env } from "@/lib/env";
 
 /**
- * MakeItSo Finance - Authentication Hooks
+ * Captain's Ledger - Authentication Hooks
  * 
  * Client-side authentication hooks for React components with
  * financial-grade security features, permission checking,

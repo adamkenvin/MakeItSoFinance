@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import "./globals.css";
 
 /**
- * MakeItSo Finance - Root Layout
+ * Captain's Ledger - Root Layout
  * 
  * Enhanced root layout with authentication provider, security headers,
  * and financial application specific metadata and configurations.
@@ -26,7 +26,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MakeItSo Finance",
+  title: "Captain's Ledger - Finance Tracker",
   description: "Simple budgeting and expense tracking app",
 };
 

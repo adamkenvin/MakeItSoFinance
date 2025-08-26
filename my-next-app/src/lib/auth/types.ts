@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Authentication Type Definitions
+ * Captain's Ledger - Authentication Type Definitions
  * 
  * Enhanced TypeScript definitions for NextAuth.js with financial
  * application specific user roles, permissions, and security metadata.

@@ -6,6 +6,8 @@ import Dashboard from './Dashboard'
 import ThemeToggle from './ThemeToggle'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
+import Image from 'next/image'
+import logoImage from '../../public/brand/logo.png'
 
 export default function TabContainer() {
   const { effectiveTheme } = useTheme()
@@ -43,8 +45,11 @@ export default function TabContainer() {
         {/* Header with navigation and user menu */}
         <div className="flex justify-between items-center p-6 pb-0">
           <div className="flex items-center gap-4">
-            <h1 className={`text-2xl font-bold ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
-              MakeItSo Finance
+            <h1 className={`text-2xl font-bold  ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
+              <div>
+                <Image src={logoImage} alt="Captain's log logo" width={64} height={64} className='inline-block'/>
+                Captain&apos;s Ledger
+              </div>
             </h1>
           </div>
           
