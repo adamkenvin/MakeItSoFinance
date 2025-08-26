@@ -44,6 +44,7 @@ export default function BudgetTab() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [categoryTransactions, setCategoryTransactions] = useState<Record<string, Transaction[]>>({})
+  const [showExportMenu, setShowExportMenu] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data: budgets, isLoading, error, refetch } = useQuery<BudgetData[]>({
@@ -220,6 +221,85 @@ export default function BudgetTab() {
     setExpandedCategories(newExpanded)
   }
 
+  const exportToCSV = (budget: BudgetData) => {
+    const headers = ['Category', 'Budgeted Amount', 'Actual Spent', 'Remaining', 'Percentage Spent']
+    const csvRows = [headers.join(',')]
+    
+    budget.budgetLines.forEach(line => {
+      const percentSpent = ((line.actualSpent / line.budgetedAmount) * 100).toFixed(1)
+      const row = [
+        `"${line.category}"`,
+        line.budgetedAmount.toFixed(2),
+        line.actualSpent.toFixed(2),
+        line.remaining.toFixed(2),
+        `${percentSpent}%`
+      ]
+      csvRows.push(row.join(','))
+    })
+
+    // Add totals row
+    const totalBudgeted = budget.budgetLines.reduce((sum, line) => sum + line.budgetedAmount, 0)
+    const totalSpent = budget.budgetLines.reduce((sum, line) => sum + line.actualSpent, 0)
+    const totalRemaining = totalBudgeted - totalSpent
+    const totalPercent = ((totalSpent / totalBudgeted) * 100).toFixed(1)
+    
+    csvRows.push(['']) // Empty row
+    csvRows.push(['"TOTALS"', totalBudgeted.toFixed(2), totalSpent.toFixed(2), totalRemaining.toFixed(2), `${totalPercent}%`])
+
+    const csvString = csvRows.join('\n')
+    const blob = new Blob([csvString], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${budget.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_budget.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    setShowExportMenu(null)
+  }
+
+  const exportToJSON = (budget: BudgetData) => {
+    const exportData = {
+      budgetInfo: {
+        id: budget.id,
+        name: budget.name,
+        month: budget.month,
+        year: budget.year,
+        exportDate: new Date().toISOString()
+      },
+      summary: {
+        totalBudgeted: budget.budgetLines.reduce((sum, line) => sum + line.budgetedAmount, 0),
+        totalSpent: budget.budgetLines.reduce((sum, line) => sum + line.actualSpent, 0),
+        totalRemaining: budget.budgetLines.reduce((sum, line) => sum + (line.budgetedAmount - line.actualSpent), 0),
+        categoryCount: budget.budgetLines.length
+      },
+      categories: budget.budgetLines.map(line => ({
+        id: line.id,
+        category: line.category,
+        budgetedAmount: line.budgetedAmount,
+        actualSpent: line.actualSpent,
+        remaining: line.remaining,
+        percentageSpent: ((line.actualSpent / line.budgetedAmount) * 100).toFixed(1),
+        status: line.remaining < 0 ? 'over-budget' : line.actualSpent / line.budgetedAmount > 0.8 ? 'warning' : 'on-track'
+      }))
+    }
+
+    const jsonString = JSON.stringify(exportData, null, 2)
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const url = window.URL.createObjectURL(blob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${budget.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_budget.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    setShowExportMenu(null)
+  }
+
   if (isLoading) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>Loading budgets...</div>
   if (error) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-red-400' : 'text-red-500'}`}>Error loading budgets: {String(error)}</div>
   if (!budgets || budgets.length === 0) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>No budget data found</div>
@@ -265,6 +345,46 @@ export default function BudgetTab() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
                     </button>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setShowExportMenu(showExportMenu === budget.id ? null : budget.id)
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                        aria-label="Export budget"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </button>
+                      {showExportMenu === budget.id && (
+                        <div className={`absolute top-8 right-0 mt-1 w-32 rounded-md shadow-lg ${effectiveTheme === 'dark' ? 'bg-gray-800 border border-gray-600' : 'bg-white border border-gray-200'} ring-1 ring-black ring-opacity-5 z-10`}>
+                          <div className="py-1" role="menu">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                exportToCSV(budget)
+                              }}
+                              className={`block w-full text-left px-4 py-2 text-sm ${effectiveTheme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                              role="menuitem"
+                            >
+                              Export as CSV
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault()
+                                exportToJSON(budget)
+                              }}
+                              className={`block w-full text-left px-4 py-2 text-sm ${effectiveTheme === 'dark' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                              role="menuitem"
+                            >
+                              Export as JSON
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-6 text-lg">
                     <span className="text-blue-600 font-semibold">
