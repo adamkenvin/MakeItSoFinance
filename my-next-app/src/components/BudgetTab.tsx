@@ -221,83 +221,52 @@ export default function BudgetTab() {
     setExpandedCategories(newExpanded)
   }
 
-  const exportToCSV = (budget: BudgetData) => {
-    const headers = ['Category', 'Budgeted Amount', 'Actual Spent', 'Remaining', 'Percentage Spent']
-    const csvRows = [headers.join(',')]
-    
-    budget.budgetLines.forEach(line => {
-      const percentSpent = ((line.actualSpent / line.budgetedAmount) * 100).toFixed(1)
-      const row = [
-        `"${line.category}"`,
-        line.budgetedAmount.toFixed(2),
-        line.actualSpent.toFixed(2),
-        line.remaining.toFixed(2),
-        `${percentSpent}%`
-      ]
-      csvRows.push(row.join(','))
-    })
-
-    // Add totals row
-    const totalBudgeted = budget.budgetLines.reduce((sum, line) => sum + line.budgetedAmount, 0)
-    const totalSpent = budget.budgetLines.reduce((sum, line) => sum + line.actualSpent, 0)
-    const totalRemaining = totalBudgeted - totalSpent
-    const totalPercent = ((totalSpent / totalBudgeted) * 100).toFixed(1)
-    
-    csvRows.push(['']) // Empty row
-    csvRows.push(['"TOTALS"', totalBudgeted.toFixed(2), totalSpent.toFixed(2), totalRemaining.toFixed(2), `${totalPercent}%`])
-
-    const csvString = csvRows.join('\n')
-    const blob = new Blob([csvString], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${budget.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_budget.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    setShowExportMenu(null)
+  const exportToCSV = async (budget: BudgetData) => {
+    try {
+      const response = await fetch(`/api/budget/export?budgetId=${budget.id}&format=csv`)
+      if (!response.ok) {
+        throw new Error('Failed to export CSV')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${budget.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_budget.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      setShowExportMenu(null)
+    } catch (error) {
+      console.error('Error exporting CSV:', error)
+      alert('Failed to export CSV. Please try again.')
+    }
   }
 
-  const exportToJSON = (budget: BudgetData) => {
-    const exportData = {
-      budgetInfo: {
-        id: budget.id,
-        name: budget.name,
-        month: budget.month,
-        year: budget.year,
-        exportDate: new Date().toISOString()
-      },
-      summary: {
-        totalBudgeted: budget.budgetLines.reduce((sum, line) => sum + line.budgetedAmount, 0),
-        totalSpent: budget.budgetLines.reduce((sum, line) => sum + line.actualSpent, 0),
-        totalRemaining: budget.budgetLines.reduce((sum, line) => sum + (line.budgetedAmount - line.actualSpent), 0),
-        categoryCount: budget.budgetLines.length
-      },
-      categories: budget.budgetLines.map(line => ({
-        id: line.id,
-        category: line.category,
-        budgetedAmount: line.budgetedAmount,
-        actualSpent: line.actualSpent,
-        remaining: line.remaining,
-        percentageSpent: ((line.actualSpent / line.budgetedAmount) * 100).toFixed(1),
-        status: line.remaining < 0 ? 'over-budget' : line.actualSpent / line.budgetedAmount > 0.8 ? 'warning' : 'on-track'
-      }))
+  const exportToJSON = async (budget: BudgetData) => {
+    try {
+      const response = await fetch(`/api/budget/export?budgetId=${budget.id}&format=json`)
+      if (!response.ok) {
+        throw new Error('Failed to export JSON')
+      }
+      
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${budget.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_budget.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      setShowExportMenu(null)
+    } catch (error) {
+      console.error('Error exporting JSON:', error)
+      alert('Failed to export JSON. Please try again.')
     }
-
-    const jsonString = JSON.stringify(exportData, null, 2)
-    const blob = new Blob([jsonString], { type: 'application/json' })
-    const url = window.URL.createObjectURL(blob)
-    
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${budget.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_budget.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    setShowExportMenu(null)
   }
 
   if (isLoading) return <div className={`p-8 ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>Loading budgets...</div>
