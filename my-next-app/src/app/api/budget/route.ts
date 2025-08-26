@@ -1,29 +1,15 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    // For MVP, create a default user and budget if they don't exist
-    const currentDate = new Date()
-    const currentMonth = currentDate.getMonth() + 1
-    const currentYear = currentDate.getFullYear()
-
-    // Get or create default user
-    let user = await prisma.user.findFirst()
+    const user = await prisma.user.findFirst()
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: 'demo@example.com',
-          name: 'Demo User'
-        }
-      })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Get or create current month's budget
-    let budgets = await prisma.budget.findMany({
-      where: {
-        userId: user.id,
-      },
+    const budgets = await prisma.budget.findMany({
+      where: { userId: user.id },
       include: {
         budgetLines: {
           include: {
@@ -31,69 +17,42 @@ export async function GET() {
           }
         }
       },
-      orderBy: [
-        {
-          year: 'desc',
-        },
-        {
-          month: 'desc'
-        }
-      ]
+      orderBy: [{ year: 'desc' }, { month: 'desc' }]
     })
 
-    if (budgets.length === 0) {
-      // Create default budget with some categories
-      const newBudget = await prisma.budget.create({
-        data: {
-          name: `Budget ${currentMonth}/${currentYear}`,
-          month: currentMonth,
-          year: currentYear,
-          userId: user.id,
-          budgetLines: {
-            create: [
-              { category: 'Groceries', budgetedAmount: 500 },
-              { category: 'Gas', budgetedAmount: 200 },
-              { category: 'Entertainment', budgetedAmount: 150 },
-              { category: 'Utilities', budgetedAmount: 300 },
-              { category: 'Dining Out', budgetedAmount: 250 }
-            ]
-          }
-        },
-        include: {
-          budgetLines: {
-            include: {
-              transactions: true
-            }
-          }
-        }
-      })
-      budgets = [newBudget]
-    }
-
-    const budgetsWithActuals = budgets.map(budget => {
-      const budgetLinesWithActuals = budget.budgetLines.map(line => {
-        const actualSpent = line.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
-        const remaining = line.budgetedAmount - actualSpent
-        
-        return {
-          id: line.id,
-          category: line.category,
-          budgetedAmount: line.budgetedAmount,
-          actualSpent,
-          remaining
-        }
-      })
-
+    // Transform data to match the frontend expectations
+    const transformedBudgets = budgets.map(budget => {
+      // Format budget name properly (remove "Budget" prefix if it exists)
+      let displayName = budget.name
+      if (displayName.startsWith('Budget ')) {
+        // Convert "Budget 12/2025" to "December 2025" format
+        displayName = new Date(budget.year, budget.month - 1).toLocaleDateString('en-US', { 
+          month: 'long', 
+          year: 'numeric' 
+        })
+      }
+      
       return {
         id: budget.id,
-        name: budget.name,
+        name: displayName,
         month: budget.month,
         year: budget.year,
-        budgetLines: budgetLinesWithActuals
+        budgetLines: budget.budgetLines.map(line => {
+          const actualSpent = line.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
+          const remaining = line.budgetedAmount - actualSpent
+          
+          return {
+            id: line.id,
+            category: line.category,
+            budgetedAmount: line.budgetedAmount,
+            actualSpent,
+            remaining
+          }
+        })
       }
     })
 
-    return NextResponse.json(budgetsWithActuals)
+    return NextResponse.json(transformedBudgets)
   } catch (error) {
     console.error('Error fetching budgets:', error)
     return NextResponse.json({ error: 'Failed to fetch budgets' }, { status: 500 })
@@ -149,7 +108,7 @@ export async function POST(request: Request) {
 
     const newBudget = await prisma.budget.create({
       data: {
-        name: `Budget ${nextMonth}/${nextYear}`,
+        name: `${new Date(nextYear, nextMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
         month: nextMonth,
         year: nextYear,
         userId: user.id,
@@ -159,9 +118,18 @@ export async function POST(request: Request) {
             category: line.category,
             budgetedAmount: line.budgetedAmount
           })) || [
-            { category: 'Groceries', budgetedAmount: 500 },
-            { category: 'Gas', budgetedAmount: 200 },
-            { category: 'Entertainment', budgetedAmount: 150 },
+            { category: 'Groceries', budgetedAmount: 600 },
+            { category: 'Transportation', budgetedAmount: 350 },
+            { category: 'Entertainment', budgetedAmount: 200 },
+            { category: 'Utilities', budgetedAmount: 250 },
+            { category: 'Dining Out', budgetedAmount: 300 },
+            { category: 'Healthcare', budgetedAmount: 150 },
+            { category: 'Shopping', budgetedAmount: 400 },
+            { category: 'Insurance', budgetedAmount: 200 },
+            { category: 'Home Maintenance', budgetedAmount: 180 },
+            { category: 'Personal Care', budgetedAmount: 100 },
+            { category: 'Gifts', budgetedAmount: 500 },
+            { category: 'Subscriptions', budgetedAmount: 80 }
           ]
         }
       },
