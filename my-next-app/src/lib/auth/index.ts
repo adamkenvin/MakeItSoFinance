@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Authentication Module Export Index
+ * Captain's Ledger - Authentication Module Export Index
  * 
  * Centralized exports for the authentication system with organized
  * imports for NextAuth.js configuration, types, utilities, and hooks.

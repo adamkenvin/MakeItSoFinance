@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Validation Utilities
+ * Captain's Ledger - Validation Utilities
  * 
  * Utility functions for validation, sanitization, error handling,
  * and security-focused input processing.

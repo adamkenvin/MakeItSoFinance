@@ -75,7 +75,7 @@ export default function SignInPage() {
             </svg>
           </div>
           <h2 className={`mt-6 text-3xl font-bold ${effectiveTheme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>
-            Sign in to MakeItSo Finance
+            Sign in to Captain&apos;s Ledger
           </h2>
           <p className={`mt-2 text-sm ${effectiveTheme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
             Access your budget management system

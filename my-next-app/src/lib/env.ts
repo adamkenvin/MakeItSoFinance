@@ -176,7 +176,7 @@ export const env = createEnv({
       .string()
       .min(1, "NEXT_PUBLIC_APP_NAME cannot be empty")
       .max(100, "NEXT_PUBLIC_APP_NAME must be less than 100 characters")
-      .default("MakeItSo Finance")
+      .default("Captain's Ledger")
       .describe("Application display name"),
     
     NEXT_PUBLIC_APP_VERSION: z

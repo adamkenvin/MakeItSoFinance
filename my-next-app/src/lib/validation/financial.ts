@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Financial Validation Schemas
+ * Captain's Ledger - Financial Validation Schemas
  * 
  * Specialized validation schemas for financial data with precision,
  * fraud prevention, and compliance requirements.

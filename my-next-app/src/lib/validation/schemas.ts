@@ -1,5 +1,5 @@
 /**
- * MakeItSo Finance - Core Validation Schemas
+ * Captain's Ledger - Core Validation Schemas
  * 
  * Comprehensive Zod validation schemas for financial application
  * with security-focused input validation and fraud prevention.

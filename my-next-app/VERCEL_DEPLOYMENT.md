@@ -1,4 +1,4 @@
-# Vercel Deployment Guide - MakeItSo Finance
+# Vercel Deployment Guide - Captain's Ledger
 
 ## 🚀 Quick Deployment Steps
 
@@ -29,7 +29,7 @@ NODE_ENV=production
 #### Optional Variables (for full functionality)
 ```bash
 # Basic app config
-APP_NAME="MakeItSo Finance"
+APP_NAME="Captain's Ledger"
 ENABLE_REGISTRATION=true
 ENABLE_DEMO_MODE=true
 
